@@ -29,6 +29,19 @@ import { PDFDocument, PDFName, PDFString, PDFArray, degrees } from 'pdf-lib';
 import { jsPDF } from 'jspdf';
 import * as pdfjsLib from 'pdfjs-dist';
 
+declare global {
+  interface Window {
+    Telegram?: {
+      WebApp: {
+        ready: () => void;
+        expand: () => void;
+        colorScheme: 'light' | 'dark';
+        onEvent: (event: string, callback: () => void) => void;
+      };
+    };
+  }
+}
+
 // Setup pdfjs worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
@@ -62,6 +75,17 @@ export default function App() {
     } else {
       document.documentElement.classList.remove('dark');
       localStorage.setItem('theme', 'light');
+    }
+
+    // Telegram Mini App Support
+    if (window.Telegram?.WebApp) {
+      const tg = window.Telegram.WebApp;
+      tg.ready();
+      tg.expand();
+      
+      // Initial theme sync
+      if (tg.colorScheme === 'dark' && !isDarkMode) setIsDarkMode(true);
+      if (tg.colorScheme === 'light' && isDarkMode) setIsDarkMode(false);
     }
   }, [isDarkMode]);
 
