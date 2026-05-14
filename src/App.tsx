@@ -23,7 +23,8 @@ import {
   Download,
   Loader2,
   Trash2,
-  Plus
+  Plus,
+  Share2
 } from 'lucide-react';
 import { PDFDocument, PDFName, PDFString, PDFArray, degrees } from 'pdf-lib';
 import { jsPDF } from 'jspdf';
@@ -597,7 +598,7 @@ function ToolRunner({ tool, onClose }: { tool: Tool, onClose: () => void }) {
     setProgress(100);
   };
 
-  const download = (data: Uint8Array, name: string) => {
+  const download = async (data: Uint8Array, name: string) => {
     try {
       const blob = new Blob([data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
@@ -605,25 +606,51 @@ function ToolRunner({ tool, onClose }: { tool: Tool, onClose: () => void }) {
       // Store for manual download (important for Telegram/Mobile)
       setDownloadData({ url, name });
 
+      // Try automatic download
       const a = document.createElement('a');
       a.style.display = 'none';
       a.href = url;
       a.download = name;
       
-      // Append to DOM for better mobile/tablet support
       document.body.appendChild(a);
       a.click();
       
-      // Delay removal to ensure browser handles the request
       setTimeout(() => {
         if (document.body.contains(a)) {
           document.body.removeChild(a);
         }
-        // NOTE: We don't revoke here because the manual button might need it
       }, 500);
     } catch (e) {
       console.error("Download failed:", e);
-      alert("Download failed. Please try again or use a different browser.");
+    }
+  };
+
+  const handleShare = async () => {
+    if (!downloadData) return;
+    
+    try {
+      // Use the Web Share API if possible
+      const response = await fetch(downloadData.url);
+      const blob = await response.blob();
+      const file = new File([blob], downloadData.name, { type: 'application/pdf' });
+
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'Doclixxy PDF',
+          text: 'Here is your document.',
+        });
+      } else {
+        // Fallback for desktop or non-share devices
+        const a = document.createElement('a');
+        a.href = downloadData.url;
+        a.download = downloadData.name;
+        a.click();
+      }
+    } catch (e) {
+      console.error("Share failed:", e);
+      // Last resort fallback
+      window.open(downloadData.url, '_blank');
     }
   };
 
@@ -813,22 +840,40 @@ function ToolRunner({ tool, onClose }: { tool: Tool, onClose: () => void }) {
             </div>
           )}
 
-          {/* Manual Download Button (Especially for Telegram) */}
+          {/* Manual Download & Share (Crucial for Telegram/Mobile) */}
           {downloadData && !isProcessing && (
             <motion.div 
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex flex-col items-center gap-3"
+              className="p-5 bg-emerald-500/10 border border-emerald-500/20 rounded-3xl flex flex-col items-center gap-4 shadow-xl"
             >
-              <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">File is ready for download!</p>
-              <a 
-                href={downloadData.url} 
-                download={downloadData.name}
-                className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold flex items-center justify-center gap-3 transition-all shadow-lg"
-              >
-                <Download className="w-5 h-5" /> Download {downloadData.name}
-              </a>
-              <p className="text-[10px] text-apple-gray-400 text-center">If the automatic download didn't start, please use the button above.</p>
+              <div className="flex flex-col items-center gap-1">
+                <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">Success! Your file is ready.</p>
+                <p className="text-[10px] text-apple-gray-400">Use the buttons below to save or share.</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 w-full">
+                <a 
+                  href={downloadData.url} 
+                  download={downloadData.name}
+                  className="py-3 px-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-bold flex flex-col items-center justify-center gap-1 transition-all shadow-md text-[11px]"
+                >
+                  <Download className="w-5 h-5" />
+                  Save
+                </a>
+                
+                <button 
+                  onClick={handleShare}
+                  className="py-3 px-2 bg-blue-500 hover:bg-blue-600 text-white rounded-2xl font-bold flex flex-col items-center justify-center gap-1 transition-all shadow-md text-[11px]"
+                >
+                  <Share2 className="w-5 h-5" />
+                  Share / Open
+                </button>
+              </div>
+              
+              <p className="text-[9px] text-apple-gray-400 text-center px-4">
+                If "Save" doesn't work in Telegram, use "Share" to save it to your phone's Files.
+              </p>
             </motion.div>
           )}
 
