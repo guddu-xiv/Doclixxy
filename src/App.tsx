@@ -402,7 +402,8 @@ function ToolRunner({ tool, onClose }: { tool: Tool, onClose: () => void }) {
       outputPdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
       setProgress((i / pdf.numPages) * 100);
     }
-    outputPdf.save('Doclixxy_Secured_Images.pdf');
+    const pdfData = outputPdf.output('arraybuffer');
+    download(new Uint8Array(pdfData), 'Doclixxy_Secured_Images.pdf');
   };
 
   const applyWatermark = async () => {
@@ -517,8 +518,8 @@ function ToolRunner({ tool, onClose }: { tool: Tool, onClose: () => void }) {
           }));
 
           let annots = page.node.get(PDFName.of('Annots'));
-          if (annots instanceof PDFArray) {
-            annots.push(newAnnot);
+          if (annots && (annots instanceof PDFArray || typeof (annots as any).push === 'function')) {
+            (annots as any).push(newAnnot);
           } else {
             page.node.set(PDFName.of('Annots'), pdf.context.obj([newAnnot]));
           }
@@ -563,13 +564,27 @@ function ToolRunner({ tool, onClose }: { tool: Tool, onClose: () => void }) {
   };
 
   const download = (data: Uint8Array, name: string) => {
-    const blob = new Blob([data], { type: 'application/pdf' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = name;
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      const blob = new Blob([data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = name;
+      
+      // Append to DOM for better mobile/tablet support
+      document.body.appendChild(a);
+      a.click();
+      
+      // Delay removal to ensure browser handles the request
+      setTimeout(() => {
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      }, 200);
+    } catch (e) {
+      console.error("Download failed:", e);
+      alert("Download failed. Please try again or use a different browser.");
+    }
   };
 
   return (
