@@ -88,6 +88,24 @@ export default function App() {
       if (tg.colorScheme === 'dark' && !isDarkMode) setIsDarkMode(true);
       if (tg.colorScheme === 'light' && isDarkMode) setIsDarkMode(false);
     }
+
+    // Security: Block Right-Click and Shortcuts
+    const handleContextMenu = (e: MouseEvent) => e.preventDefault();
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'F12' || 
+          (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) || 
+          (e.ctrlKey && (e.key === 'u' || e.key === 'U' || e.key === 's' || e.key === 'S'))) {
+        e.preventDefault();
+      }
+    };
+
+    document.addEventListener('contextmenu', handleContextMenu);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('contextmenu', handleContextMenu);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, [isDarkMode]);
 
   useEffect(() => {
