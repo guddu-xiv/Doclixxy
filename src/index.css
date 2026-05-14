@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  
+  --color-apple-gray-50: #f5f5f7;
+  --color-apple-gray-100: #e8e8ed;
+  --color-apple-gray-200: #d2d2d7;
+  --color-apple-gray-300: #86868b;
+  --color-apple-gray-400: #6e6e73;
+  --color-apple-gray-500: #424245;
+  --color-apple-gray-600: #1d1d1f;
+}
+
+@layer base {
+  * {
+    font-family: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  }
+  
+  body {
+    @apply font-sans antialiased text-apple-gray-600 bg-white dark:bg-[#000000] dark:text-apple-gray-100;
+    transition: background-color 0.5s cubic-bezier(0.4, 0, 0.2, 1), color 0.5s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+@layer components {
+  .glass {
+    @apply bg-white/70 dark:bg-black/70 backdrop-blur-xl border-b border-apple-gray-200/50 dark:border-apple-gray-500/30;
+  }
+
+  /* Base button styles */
+  .apple-button {
+    @apply px-6 py-2.5 rounded-full font-medium transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center;
+  }
+
+  .apple-button-primary {
+    @apply px-6 py-2.5 rounded-full font-medium transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center bg-[#0071e3] text-white hover:bg-[#0077ed];
+  }
+
+  .apple-button-secondary {
+    @apply px-6 py-2.5 rounded-full font-medium transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center bg-apple-gray-100 text-apple-gray-600 hover:bg-apple-gray-200 dark:bg-apple-gray-500/20 dark:text-apple-gray-100 dark:hover:bg-apple-gray-500/40;
+  }
+
+  .tool-card {
+    @apply p-8 rounded-[2rem] bg-apple-gray-50 dark:bg-[#1c1c1e] border border-transparent hover:border-apple-gray-200 dark:hover:border-apple-gray-500/30 transition-all duration-500 hover:shadow-2xl hover:shadow-black/5 dark:hover:shadow-white/5;
+  }
+
+  /* Custom Scrollbar for sleek lists */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-apple-gray-200 dark:bg-apple-gray-500/30 rounded-full;
+  }
+}
