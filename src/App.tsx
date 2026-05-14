@@ -331,6 +331,7 @@ function ToolRunner({ tool, onClose }: { tool: Tool, onClose: () => void }) {
   const [detectedPages, setDetectedPages] = useState(0);
 
   const [pageRanges, setPageRanges] = useState('');
+  const [downloadData, setDownloadData] = useState<{ url: string, name: string } | null>(null);
 
   useEffect(() => {
     const detect = async () => {
@@ -349,6 +350,14 @@ function ToolRunner({ tool, onClose }: { tool: Tool, onClose: () => void }) {
     detect();
   }, [files, tool.id]);
 
+  useEffect(() => {
+    return () => {
+      if (downloadData) {
+        window.URL.revokeObjectURL(downloadData.url);
+      }
+    };
+  }, [downloadData]);
+
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       setFiles(Array.from(e.target.files));
@@ -357,6 +366,7 @@ function ToolRunner({ tool, onClose }: { tool: Tool, onClose: () => void }) {
 
   const handleProcess = async () => {
     if (files.length === 0) return;
+    setDownloadData(null);
     setIsProcessing(true);
     setStatus('Initializing processing...');
     setProgress(0);
@@ -591,6 +601,10 @@ function ToolRunner({ tool, onClose }: { tool: Tool, onClose: () => void }) {
     try {
       const blob = new Blob([data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
+      
+      // Store for manual download (important for Telegram/Mobile)
+      setDownloadData({ url, name });
+
       const a = document.createElement('a');
       a.style.display = 'none';
       a.href = url;
@@ -602,9 +616,11 @@ function ToolRunner({ tool, onClose }: { tool: Tool, onClose: () => void }) {
       
       // Delay removal to ensure browser handles the request
       setTimeout(() => {
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-      }, 200);
+        if (document.body.contains(a)) {
+          document.body.removeChild(a);
+        }
+        // NOTE: We don't revoke here because the manual button might need it
+      }, 500);
     } catch (e) {
       console.error("Download failed:", e);
       alert("Download failed. Please try again or use a different browser.");
@@ -795,6 +811,25 @@ function ToolRunner({ tool, onClose }: { tool: Tool, onClose: () => void }) {
                 />
               </div>
             </div>
+          )}
+
+          {/* Manual Download Button (Especially for Telegram) */}
+          {downloadData && !isProcessing && (
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex flex-col items-center gap-3"
+            >
+              <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">File is ready for download!</p>
+              <a 
+                href={downloadData.url} 
+                download={downloadData.name}
+                className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold flex items-center justify-center gap-3 transition-all shadow-lg"
+              >
+                <Download className="w-5 h-5" /> Download {downloadData.name}
+              </a>
+              <p className="text-[10px] text-apple-gray-400 text-center">If the automatic download didn't start, please use the button above.</p>
+            </motion.div>
           )}
 
           {/* Action Button */}
